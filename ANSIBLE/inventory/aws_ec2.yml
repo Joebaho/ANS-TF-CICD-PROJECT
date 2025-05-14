@@ -1,0 +1,12 @@
+plugin: aws_ec2
+regions:
+  - us-west-2
+keyed_groups:
+  - key: tags.Role
+    prefix: "role_"
+  - key: tags.Name
+    prefix: "name_"
+filters:
+  tag:Project: ansible-cicd
+compose:
+  ansible_user: "ubuntu if tags['Role'] == 'controller' else 'ec2-user'"

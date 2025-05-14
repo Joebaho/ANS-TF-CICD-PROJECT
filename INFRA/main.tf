@@ -34,7 +34,7 @@ data "aws_ami" "ubuntu" {
 }
 #Key pair creation 
 resource "aws_key_pair" "deployer" {
-  key_name   = "ansible-ssh-key"
+  key_name   = "ansible-ssh-key-${sha256(timestamp())}"
   public_key = file("~/.ssh/id_rsa.pub")
 }
 # Create Amazon linux controller

@@ -1,0 +1,12 @@
+# .gitignore
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.backup
+**/.terraform.lock.hcl
+**/tfplan
+**/.env
+**/*.pem
+**/id_rsa*
+**/terraform.tfvars
+**/override.tf
+**/build.env
