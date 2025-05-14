@@ -1,0 +1,46 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+    commands:
+      - echo "Installing dependencies..."
+      - apt-get update -y
+      - apt-get install -y unzip
+      - curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
+      - apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+      - apt-get update && apt-get install -y terraform
+      - pip install ansible boto3
+
+  pre_build:
+    commands:
+      - echo "Pre-build stage..."
+      - cd INFRA
+      - echo ==== Check the status of the configuarion files ====
+      - terraform validate
+      - echo "Check for any syntax error..."
+      - terraform fmt
+      - echo " Initialize the folder..."
+      - terraform init
+
+  build:
+    commands:
+      - echo "Building infrastructure..."
+      - terraform apply -auto-approve
+      - export CONTROLLER_IP=$(terraform output -raw controller_ip)
+      - export UBUNTU_WORKER_IPS=$(terraform output -json ubuntu_worker_ips | jq -r 'join(" ")')
+      - export AMAZON_WORKER_IPS=$(terraform output -json amazon_worker_ips | jq -r 'join(" ")')
+      - cd ../ansible
+      - ansible-playbook -i inventory.ini setup-controller.yml
+      - ssh -o StrictHostKeyChecking=no ubuntu@$CONTROLLER_IP "ansible-playbook -i inventory.ini configure-nodes.yml"
+
+  post_build:
+    commands:
+      - echo "Build completed on `date`"
+      - echo "Controller IP: $CONTROLLER_IP"
+      - echo "Worker IPs: $UBUNTU_WORKER_IPS $AMAZON_WORKER_IPS"
+
+artifacts:
+  files:
+    - '**/*'

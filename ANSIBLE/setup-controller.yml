@@ -1,0 +1,37 @@
+---
+- name: Configure Ansible Controller
+  hosts: controller
+  become: yes
+  tasks:
+    - name: Install Ansible
+      apt:
+        name: ansible
+        state: present
+        update_cache: yes
+
+    - name: Install Python pip
+      apt:
+        name: python3-pip
+        state: present
+
+    - name: Install boto3 for AWS
+      pip:
+        name: boto3
+        state: present
+
+    - name: Create SSH config directory
+      file:
+        path: /home/ubuntu/.ssh
+        state: directory
+        mode: '0700'
+
+    - name: Copy SSH private key
+      copy:
+        src: ~/.ssh/id_rsa
+        dest: /home/ubuntu/.ssh/id_rsa
+        mode: '0600'
+
+    - name: Generate dynamic inventory
+      template:
+        src: inventory.ini.j2
+        dest: /home/ubuntu/inventory.ini

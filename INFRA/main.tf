@@ -1,0 +1,103 @@
+
+# ZONE OF DATA SOURCE
+
+# Declare the data source for AZ
+data "aws_availability_zones" "az" {
+  state = "available"
+}
+# Declare the data source for the latest AMI Linux 
+data "aws_ami" "amazon_linux_2" {
+  most_recent = true
+  owners      = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+#Declare the data source for the latest AMI Ubuntu 
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"] # 
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+#Key pair creation 
+resource "aws_key_pair" "deployer" {
+  key_name   = "ansible-ssh-key"
+  public_key = file("~/.ssh/id_rsa.pub")
+}
+# Create Amazon linux controller
+resource "aws_instance" "controller" {
+  instance_type          = var.instance_type
+  ami                    = data.aws_ami.ubuntu.id
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
+  key_name               = aws_key_pair.deployer.key_name
+  tags = {
+     Name = "ansible-controller"
+     Role = "controller"
+  }
+}
+# Create Amazon linux server
+resource "aws_instance" "amazon_linux_workers" {
+  count                  = var.number
+  instance_type          = var.instance_type
+  ami                    = data.aws_ami.amazon_linux_2.id
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
+  key_name               = aws_key_pair.deployer.key_name
+  tags = {
+    Name = "amazon-worker-${count.index}"
+    Role = "worker"
+  }
+}
+#Create ubuntu server 
+resource "aws_instance" "ubuntu_workers" {
+  count                  = var.number
+  instance_type          = var.instance_type
+  ami                    = data.aws_ami.ubuntu.id
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
+  key_name               = aws_key_pair.deployer.key_name
+  tags = {
+    Name = "ubuntu-worker-${count.index}"
+    Role = "worker"
+  }
+}
+
+resource "aws_security_group" "web_sg" {
+  #vpc_id      = data.aws_vpc.default.id
+  description = "security group for server"
+  name        = "web_sg"
+
+  ingress {
+    from_port   = var.port_number[0] #80
+    to_port     = var.port_number[0] #80
+    protocol    = "tcp"
+    cidr_blocks = [var.public_cidr]
+  }
+  ingress {
+    from_port   = var.port_number[1] #22
+    to_port     = var.port_number[1] #22
+    protocol    = "tcp"
+    cidr_blocks = [var.public_cidr]
+  }
+  egress {
+    from_port   = var.port_number[2] #0
+    to_port     = var.port_number[2] #0
+    protocol    = "-1"
+    cidr_blocks = [var.public_cidr]
+  }
+  tags = {
+    "Name" = "web_sg"
+  }
+}
+# D
