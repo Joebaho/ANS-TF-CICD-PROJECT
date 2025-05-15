@@ -42,7 +42,7 @@ resource "aws_key_pair" "deployer" {
   key_name   = "deployer-key"
   public_key = tls_private_key.example.public_key_openssh
   lifecycle {
-    ignore_changes = [key_name]
+    create_before_destroy = true
   }
 }
 # resource "aws_key_pair" "deployer" {
