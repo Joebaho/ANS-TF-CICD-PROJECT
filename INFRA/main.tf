@@ -39,10 +39,11 @@ resource "tls_private_key" "example" {
 }
 
 resource "aws_key_pair" "deployer" {
-  key_name   = "deployer-key"
+  key_name   = "deployer-key-${formatdate("YYYYMMDDhhmmss", timestamp())}"
   public_key = tls_private_key.example.public_key_openssh
   lifecycle {
     create_before_destroy = true
+    ignore_changes = [key_name]
   }
 }
 # resource "aws_key_pair" "deployer" {
