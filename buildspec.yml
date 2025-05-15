@@ -7,23 +7,32 @@ phases:
     commands:
       - echo "Installing dependencies..."
       - apt-get update -y
-      - apt-get install -y unzip jq
+      - apt-get install -y unzip jq sshpass
+      
+      # Terraform installation
       - curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
       - apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
       - apt-get update && apt-get install -y terraform
-      - pip install ansible boto3
+      
+      # Ansible installation (NEW SECTION)
+      - echo "Installing Ansible and dependencies..."
+      - apt-get install -y software-properties-common
+      - apt-add-repository --yes --update ppa:ansible/ansible
+      - apt-get install -y ansible
+      - pip install --upgrade pip
+      - pip install boto3 botocore
+      - ansible-galaxy collection install amazon.aws community.general
 
   pre_build:
     commands:
       - echo "Pre-build stage..."
       - cd INFRA
-      - echo " Initialize the folder..."
+      - echo "Initialize the folder..."
       - terraform init
-      - echo ==== Check the status of the configuarion files ====
+      - echo "==== Check the status of the configuarion files ===="
       - terraform fmt
       - echo "Check for any syntax error..."
       - terraform validate
-      
 
   build:
     commands:
@@ -32,15 +41,25 @@ phases:
       - export CONTROLLER_IP=$(terraform output -raw controller_ip)
       - export UBUNTU_WORKER_IPS=$(terraform output -json ubuntu_worker_ips | jq -r 'join(" ")')
       - export AMAZON_WORKER_IPS=$(terraform output -json amazon_worker_ips | jq -r 'join(" ")')
-      - cd ../ansible
-      - ansible-playbook -i inventory.ini setup-controller.yml
-      - ssh -o StrictHostKeyChecking=no ubuntu@$CONTROLLER_IP "ansible-playbook -i inventory.ini configure-nodes.yml"
+      
+      # Ansible configuration (IMPROVED SECTION)
+      - echo "Configuring Ansible controller..."
+      - mkdir -p /etc/ansible
+      - cp -r ../ansible/* /etc/ansible/
+      - chmod 600 /etc/ansible/ssh_keys/*
+      - ansible-playbook -i /etc/ansible/inventory.ini /etc/ansible/setup-controller.yml
+      
+      # Remote execution (IMPROVED)
+      - echo "Executing remote configuration..."
+      - ssh-keyscan $CONTROLLER_IP >> ~/.ssh/known_hosts
+      - ssh -o StrictHostKeyChecking=no -i /etc/ansible/ssh_keys/id_rsa ubuntu@$CONTROLLER_IP "ansible-playbook -i /home/ubuntu/ansible/inventory.ini /home/ubuntu/ansible/configure-nodes.yml"
 
   post_build:
     commands:
       - echo "Build completed on `date`"
-      - echo ==== Controller IP:$CONTROLLER_IP ===
-      - echo ==== Worker IPs:$UBUNTU_WORKER_IPS $AMAZON_WORKER_IPS ====
+      - echo "==== Controller IP: $CONTROLLER_IP ===="
+      - echo "==== Ubuntu Workers: $UBUNTU_WORKER_IPS ===="
+      - echo "==== Amazon Workers: $AMAZON_WORKER_IPS ===="
 
 artifacts:
   files:

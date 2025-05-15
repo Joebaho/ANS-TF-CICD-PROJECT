@@ -17,4 +17,9 @@ output "worker_Private_ips" {
     aws_instance.amazon_linux_workers[*].private_ip
   )
 }
+# key pair output 
+output "private_key" {
+  value     = tls_private_key.example.private_key_pem
+  sensitive = true
+}
 
