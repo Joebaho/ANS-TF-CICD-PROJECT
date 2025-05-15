@@ -57,7 +57,8 @@ phases:
     commands:
       - echo "Build completed on `date`"
       - echo ==== Controller IP:$CONTROLLER_IP ===
-      - echo ==== Worker IPs:$UBUNTU_WORKER_IPS $AMAZON_WORKER_IPS ====
+      - echo ==== Worker IPs:$UBUNTU_WORKER_IPS ====
+      - echo ==== Worker IPs:$AMAZON_WORKER_IPS ====
 
 artifacts:
   files:
