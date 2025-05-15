@@ -45,9 +45,8 @@ phases:
       
       # Ansible configuration (IMPROVED SECTION)
       - echo "Configuring Ansible controller..."
-      - mkdir -p /etc/ansible
-      - cp -r ../ansible/* /etc/ansible/
-      - chmod 600 /etc/ansible/ssh_keys/*
+      - ansible --version
+      - cd /etc/ansible
       - ansible-playbook -i /etc/ansible/inventory.ini /etc/ansible/setup-controller.yml
       
       # Remote execution (IMPROVED)
