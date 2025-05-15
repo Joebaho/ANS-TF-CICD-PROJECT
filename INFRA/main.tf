@@ -42,12 +42,6 @@ resource "aws_key_pair" "deployer" {
   key_name   = "deployer-key"
   public_key = tls_private_key.example.public_key_openssh
 }
-
-output "private_key" {
-  value     = tls_private_key.example.private_key_pem
-  sensitive = true
-}
-
 # resource "aws_key_pair" "deployer" {
 #   key_name   = "ansible-ssh-key-${sha256(timestamp())}"
 #   public_key = file("/home/ubuntu/.ssh/id_rsa.pub")
