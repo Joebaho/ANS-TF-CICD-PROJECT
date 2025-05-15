@@ -47,7 +47,7 @@ phases:
       - echo "Configuring Ansible controller..."
       - ansible --version
       - cd /etc/ansible
-      - ansible-playbook -i /etc/ansible/inventory.ini /etc/ansible/setup-controller.yml
+      - ansible-playbook -i /ANSIBLE/inventory.ini /ANSIBLE/setup-controller.yml
       
       # Remote execution (IMPROVED)
       - echo "Executing remote configuration..."
