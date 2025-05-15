@@ -41,6 +41,9 @@ resource "tls_private_key" "example" {
 resource "aws_key_pair" "deployer" {
   key_name   = "deployer-key"
   public_key = tls_private_key.example.public_key_openssh
+  lifecycle {
+    ignore_changes = [key_name]
+  }
 }
 # resource "aws_key_pair" "deployer" {
 #   key_name   = "ansible-ssh-key-${sha256(timestamp())}"
@@ -85,7 +88,7 @@ resource "aws_instance" "ubuntu_workers" {
 resource "aws_security_group" "web_sg" {
   #vpc_id      = data.aws_vpc.default.id
   description = "security group for server"
-  name        = "web_sg"
+  name        = "web_sg_${random_id.sg_suffix.hex}"
 
   ingress {
     from_port   = var.port_number[0] #80
@@ -108,5 +111,11 @@ resource "aws_security_group" "web_sg" {
   tags = {
     "Name" = "web_sg"
   }
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+resource "random_id" "sg_suffix" {
+  byte_length = 4
 }
 # D
