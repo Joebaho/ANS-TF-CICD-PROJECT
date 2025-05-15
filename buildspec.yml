@@ -5,16 +5,15 @@ phases:
     runtime-versions:
       python: 3.10
     commands:
+      # Update services
       - echo "Installing dependencies..."
       - apt-get update -y
       - apt-get install -y unzip jq sshpass
-      
-      # Terraform installation
+       # Terraform installation
       - curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
       - apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
       - apt-get update && apt-get install -y terraform
-      
-      # Ansible installation (NEW SECTION)
+      # Ansible installation
       - echo "Installing Ansible and dependencies..."
       - apt-get install -y software-properties-common
       - apt-add-repository --yes --update ppa:ansible/ansible
@@ -42,14 +41,12 @@ phases:
       - export CONTROLLER_IP=$(terraform output -raw controller_ip)
       - export UBUNTU_WORKER_IPS=$(terraform output -json ubuntu_worker_ips | jq -r 'join(" ")')
       - export AMAZON_WORKER_IPS=$(terraform output -json amazon_worker_ips | jq -r 'join(" ")')
-      
-      # Ansible configuration (IMPROVED SECTION)
+      # Ansible configuration with the playbook and inventoty
       - echo "Configuring Ansible controller..."
       - ansible --version
       - cd /etc/ansible
       - ansible-playbook -i /home/ubuntu/ansible/inventory.ini /home/ubuntu/ansible/configure-nodes.yml
-      
-      # Remote execution (IMPROVED)
+      # Remote execution
       - echo "Executing remote configuration..."
       - ssh-keyscan $CONTROLLER_IP >> ~/.ssh/known_hosts
       - ssh -o StrictHostKeyChecking=no -i /etc/ansible/ssh_keys/id_rsa ubuntu@$CONTROLLER_IP "ansible-playbook -i /home/ubuntu/ansible/inventory.ini  /home/ubuntu/ansible/configure-nodes.yml"
