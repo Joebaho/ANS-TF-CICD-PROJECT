@@ -57,9 +57,9 @@ phases:
   post_build:
     commands:
       - echo "Build completed on `date`"
-      - echo "==== Controller IP: $CONTROLLER_IP ===="
-      - echo "==== Ubuntu Workers: $UBUNTU_WORKER_IPS ===="
-      - echo "==== Amazon Workers: $AMAZON_WORKER_IPS ===="
+      - echo ==== Controller IP:$CONTROLLER_IP ====
+      - echo ==== Ubuntu Workers:$UBUNTU_WORKER_IPS ====
+      - echo ==== Amazon Workers:$AMAZON_WORKER_IPS ====
 
 artifacts:
   files:
