@@ -33,10 +33,25 @@ data "aws_ami" "ubuntu" {
   }
 }
 #Key pair creation 
-resource "aws_key_pair" "deployer" {
-  key_name   = "ansible-ssh-key-${sha256(timestamp())}"
-  public_key = file("/home/ubuntu/.ssh/id_rsa.pub")
+resource "tls_private_key" "example" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
 }
+
+resource "aws_key_pair" "deployer" {
+  key_name   = "deployer-key"
+  public_key = tls_private_key.example.public_key_openssh
+}
+
+output "private_key" {
+  value     = tls_private_key.example.private_key_pem
+  sensitive = true
+}
+
+# resource "aws_key_pair" "deployer" {
+#   key_name   = "ansible-ssh-key-${sha256(timestamp())}"
+#   public_key = file("/home/ubuntu/.ssh/id_rsa.pub")
+# }
 # Create Amazon linux controller
 resource "aws_instance" "controller" {
   instance_type          = var.instance_type
