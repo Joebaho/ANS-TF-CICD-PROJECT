@@ -47,19 +47,17 @@ phases:
       - echo "Configuring Ansible controller..."
       - ansible --version
       - cd /etc/ansible
-      - ansible-playbook -i /ANSIBLE/inventory.ini /ANSIBLE/setup-controller.yml
+      - ansible-playbook -i /home/ubuntu/ansible/inventory.ini /home/ubuntu/ansible/configure-nodes.yml
       
       # Remote execution (IMPROVED)
       - echo "Executing remote configuration..."
       - ssh-keyscan $CONTROLLER_IP >> ~/.ssh/known_hosts
-      - ssh -o StrictHostKeyChecking=no -i /etc/ansible/ssh_keys/id_rsa ubuntu@$CONTROLLER_IP "ansible-playbook -i /home/ubuntu/ansible/inventory.ini /home/ubuntu/ansible/configure-nodes.yml"
-
+      - ssh -o StrictHostKeyChecking=no -i /etc/ansible/ssh_keys/id_rsa ubuntu@$CONTROLLER_IP "ansible-playbook -i /home/ubuntu/ansible/inventory.ini  /home/ubuntu/ansible/configure-nodes.yml"
   post_build:
     commands:
       - echo "Build completed on `date`"
-      - echo ==== Controller IP:$CONTROLLER_IP ====
-      - echo ==== Ubuntu Workers:$UBUNTU_WORKER_IPS ====
-      - echo ==== Amazon Workers:$AMAZON_WORKER_IPS ====
+      - echo ==== Controller IP:$CONTROLLER_IP ===
+      - echo ==== Worker IPs:$UBUNTU_WORKER_IPS $AMAZON_WORKER_IPS ====
 
 artifacts:
   files:
