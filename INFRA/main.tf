@@ -56,6 +56,7 @@ resource "aws_instance" "controller" {
   ami                    = data.aws_ami.ubuntu.id
   vpc_security_group_ids = [aws_security_group.web_sg.id]
   key_name               = aws_key_pair.deployer.key_name
+  user_data              = filebase64("${path.module}/user_data.sh")
   tags = {
      Name = "ansible-controller"
      Role = "controller"
