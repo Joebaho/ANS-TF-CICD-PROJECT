@@ -17,12 +17,13 @@ phases:
     commands:
       - echo "Pre-build stage..."
       - cd INFRA
-      - echo ==== Check the status of the configuarion files ====
-      - terraform validate
-      - echo "Check for any syntax error..."
-      - terraform fmt
       - echo " Initialize the folder..."
       - terraform init
+      - echo ==== Check the status of the configuarion files ====
+      - terraform fmt
+      - echo "Check for any syntax error..."
+      - terraform validate
+      
 
   build:
     commands:
