@@ -69,7 +69,7 @@ resource "aws_iam_role" "iam_for_ec2" {
 
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-  ]
+   ]
 }
 resource "aws_iam_instance_profile" "ec2_instance_profile" {
   name = "Ec2RoleForSSM"
