@@ -5,7 +5,7 @@ Parameters:
   GitHubRepo:
     Type: String
     Description: 'URL of your GitHub repository (e.g., https://github.com/user/repo)'
-    Default: 
+    Default: https://github.com/Joebaho/ANS-TF-CICD-PROJECT/tree/main/CLOUDFORMATION
   GitHubBranch:
     Type: String
     Default: 'main'
