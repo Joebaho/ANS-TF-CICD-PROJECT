@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'AWS CI/CD Pipeline for EC2 Deployment with Ansible'
-
+#Parameters to enter
 Parameters:
   GitHubRepo:
     Type: String
@@ -75,7 +75,6 @@ Resources:
           apt-get update -y
           apt-get install -y ansible python3-pip
           pip install boto3
-
   UbuntuNode1:
     Type: 'AWS::EC2::Instance'
     Properties:
@@ -164,7 +163,6 @@ Resources:
                   - codebuild:*
                   - iam:PassRole
                 Resource: "*"
-  # IAM Role for CodePipeline
   # IAM Role for CodePipeline
   CodePipelineRole:
     Type: 'AWS::IAM::Role'
