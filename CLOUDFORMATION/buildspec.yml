@@ -1,0 +1,26 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.10
+    commands:
+      - echo "Installing Ansible and dependencies..."
+      - apt-get update -y
+      - apt-get install -y ansible sshpass
+
+  build:
+    commands:
+      - echo "Configuring EC2 instances with Ansible..."
+      - cd ansible
+      - echo "[controller]" > inventory.ini
+      - echo "$CONTROLLER_IP ansible_user=ubuntu" >> inventory.ini
+      - echo "[nodes]" >> inventory.ini
+      # Add logic to fetch node IPs using AWS CLI (alternative to Terraform outputs)
+      - aws ec2 describe-instances --filters "Name=tag:Role,Values=worker" --query "Reservations[].Instances[].PublicIpAddress" --output text | tr '\t' '\n' >> inventory.ini
+      - ansible-playbook -i inventory.ini playbook.yml -vvv
+
+artifacts:
+  files:
+    - 'ansible/inventory.ini'
+    - 'ansible/playbook.yml'

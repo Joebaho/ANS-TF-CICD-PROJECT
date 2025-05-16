@@ -1,0 +1,34 @@
+---
+- name: Configure all nodes
+  hosts: all
+  become: True
+  tasks:
+    - name: Update package cache (Ubuntu)
+      apt:
+        update_cache: yes
+      when: ansible_distribution == 'Ubuntu'
+
+    - name: Update package cache (Amazon Linux)
+      yum:
+        update_cache: yes
+      when: ansible_distribution == 'Amazon'
+
+    - name: Install Apache
+      block:
+        - name: Install Apache on Ubuntu
+          apt:
+            name: apache2
+            state: present
+          when: ansible_distribution == 'Ubuntu'
+
+        - name: Install Apache on Amazon Linux
+          yum:
+            name: httpd
+            state: present
+          when: ansible_distribution == 'Amazon'
+
+    - name: Start and enable Apache
+      service:
+        name: "{{ 'apache2' if ansible_distribution == 'Ubuntu' else 'httpd' }}"
+        state: started
+        enabled: yes

@@ -1,0 +1,261 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS CI/CD Pipeline for EC2 Deployment with Ansible'
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Description: 'URL of your GitHub repository (e.g., https://github.com/user/repo)'
+    Default: 
+  GitHubBranch:
+    Type: String
+    Default: 'main'
+  GitHubToken:
+    Type: String
+    NoEcho: true
+    Description: 'GitHub OAuth token'
+  InstanceType:
+    Description: WebServer EC2 instance type (has default, AllowedValues)
+    Type: String
+    AllowedValues: # choose between all t2 category 
+      - t2.large
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.xlarge
+      - t2.2xlarge
+      - t2.medium
+  KeyName:
+    Description: Name of an existing EC2 key pair for SSH access to the EC2 instance.
+    Type: AWS::EC2::KeyPair::KeyName
+  LinuxImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+    Description: "Fetch latest Amazon Linux AMI ID from SSM Parameter Store"
+  UbuntuImageId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: /aws/service/canonical/ubuntu/server/22.04/stable/current/amd64/hvm/ebs-gp2/ami-id
+    Description: "Fetch latest Ubuntu 22.04 LTS AMI ID from SSM Parameter Store"
+
+Resources:
+  # Security Group for EC2 instances
+  AnsibleSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Allow SSH and HTTP traffic'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  # EC2 Instances (3 Ubuntu, 2 Amazon Linux)
+  AnsibleController:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref UbuntuImageId # Ubuntu 22.04
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !GetAtt AnsibleSecurityGroup.GroupId
+      Tags:
+        - Key: Name
+          Value: ansible-controller
+        - Key: Role
+          Value: controller
+        - Key: OS
+          Value: ubuntu
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          apt-get update -y
+          apt-get install -y ansible python3-pip
+          pip install boto3
+
+  UbuntuNode1:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref UbuntuImageId   # Ubuntu 22.04
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !GetAtt AnsibleSecurityGroup.GroupId
+      Tags:
+        - Key: Name
+          Value: ubuntu_node_1
+        - Key: Role
+          Value: worker
+        - Key: OS
+          Value: ubuntu
+  UbuntuNode2:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref UbuntuImageId   # Ubuntu 22.04
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !GetAtt AnsibleSecurityGroup.GroupId
+      Tags:
+        - Key: Name
+          Value: ubuntu_node_2
+        - Key: Role
+          Value: worker
+        - Key: OS
+          Value: ubuntu
+  LinuxNode1:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref LinuxImageId   # Ubuntu 22.04
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !GetAtt AnsibleSecurityGroup.GroupId
+      Tags:
+        - Key: Name
+          Value: linux_node_1
+        - Key: Role
+          Value: worker
+        - Key: OS
+          Value: Amazon_linux
+  LinuxNode2:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref LinuxImageId   # Ubuntu 22.04
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !GetAtt AnsibleSecurityGroup.GroupId
+      Tags:
+        - Key: Name
+          Value: linux_node_2
+        - Key: Role
+          Value: worker
+        - Key: OS
+          Value: Amazon_linux
+  # S3 Bucket for Artifacts
+  ArtifactStoreBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub 'ansible-artifacts-${AWS::AccountId}-${AWS::Region}'
+  # IAM Role for CodeBuild
+  CodeBuildRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AnsibleDeploymentPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:*
+                  - s3:*
+                  - codebuild:*
+                  - iam:PassRole
+                Resource: "*"
+  # IAM Role for CodePipeline
+  # IAM Role for CodePipeline
+  CodePipelineRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodePipelineAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+                  - s3:PutObject
+                  - ec2:*
+                Resource: '*'
+  AnsibleDeploymentBuild:
+    Type: 'AWS::CodeBuild::Project'
+    Properties:
+      Name: ansible-ec2-configuration
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Source:
+        Type: GITHUB
+        Location: !Ref GitHubRepo
+        BuildSpec: buildspec.yml
+        Auth:
+          Type: OAUTH
+          Resource: !Ref GitHubToken
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: 'aws/codebuild/standard:5.0'
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: CONTROLLER_IP
+            Value: !GetAtt AnsibleController.PublicIp
+      Artifacts:
+        Type: NO_ARTIFACTS
+  # CodePipeline
+  AnsibleDeploymentPipeline:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      Name: ec2-ansible-deployment
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactStoreBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GitHub-Source
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: '1'
+                Provider: GitHub
+              Configuration:
+                Owner: !Select [0, !Split ['/', !Ref GitHubRepo]]
+                Repo: !Select [1, !Split ['/', !Ref GitHubRepo]]
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: SourceArtifact
+        - Name: Build
+          Actions:
+            - Name: Ansible-Configuration
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: '1'
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref AnsibleDeploymentBuild
+              InputArtifacts:
+                - Name: SourceArtifact
+              OutputArtifacts:
+                - Name: BuildArtifact
+
+Outputs:
+  ControllerPublicIP:
+    Description: 'Public IP of Ansible Controller'
+    Value: !GetAtt AnsibleController.PublicIp
+  PipelineURL:
+    Description: 'CodePipeline Console URL'
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/codesuite/codepipeline/pipelines/${AnsibleDeploymentPipeline}/view'
