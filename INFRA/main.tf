@@ -51,11 +51,36 @@ resource "aws_key_pair" "deployer" {
 #   public_key = file("/home/ubuntu/.ssh/id_rsa.pub")
 # }
 # Create Amazon linux controller
+resource "aws_iam_role" "iam_for_ec2" {
+  name        = "Ec2RoleForSSM"
+  description = "EC2 IAM role for SSM access"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = ["ec2.amazonaws.com"]
+        },
+        Action = ["sts:AssumeRole"]
+      },
+    ]
+  })
+
+  managed_policy_arns = [
+    "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  ]
+}
+resource "aws_iam_instance_profile" "ec2_instance_profile" {
+  name = "Ec2RoleForSSM"
+  role = aws_iam_role.iam_for_ec2.name
+}
 resource "aws_instance" "controller" {
   instance_type          = var.instance_type
   ami                    = data.aws_ami.ubuntu.id
   vpc_security_group_ids = [aws_security_group.web_sg.id]
   key_name               = aws_key_pair.deployer.key_name
+  iam_instance_profile   = aws_iam_instance_profile.ec2_instance_profile.name
   user_data              = filebase64("${path.module}/user_data.sh")
   tags = {
      Name = "ansible-controller"
@@ -69,6 +94,7 @@ resource "aws_instance" "amazon_linux_workers" {
   ami                    = data.aws_ami.amazon_linux_2.id
   vpc_security_group_ids = [aws_security_group.web_sg.id]
   key_name               = aws_key_pair.deployer.key_name
+  iam_instance_profile   = aws_iam_instance_profile.ec2_instance_profile.name
   tags = {
     Name = "amazon-worker-${count.index}"
     Role = "worker"
@@ -81,6 +107,7 @@ resource "aws_instance" "ubuntu_workers" {
   ami                    = data.aws_ami.ubuntu.id
   vpc_security_group_ids = [aws_security_group.web_sg.id]
   key_name               = aws_key_pair.deployer.key_name
+  iam_instance_profile   = aws_iam_instance_profile.ec2_instance_profile.name
   tags = {
     Name = "ubuntu-worker-${count.index}"
     Role = "worker"
