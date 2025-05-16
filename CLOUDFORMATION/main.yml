@@ -10,9 +10,10 @@ Parameters:
     Type: String
     Default: 'main'
   GitHubToken:
-    Type: String
+    Type:  AWS::SSM::Parameter::Value<String>
     NoEcho: true
-    Description: 'GitHub OAuth token'
+    Default: "/Github/Token"
+    Description: "Name of the parameter in Parameter Store that contains the GitHub OAuth token"
   InstanceType:
     Description: WebServer EC2 instance type (has default, AllowedValues)
     Type: String
