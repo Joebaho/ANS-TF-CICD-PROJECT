@@ -52,7 +52,7 @@ resource "aws_key_pair" "deployer" {
 # }
 # Create Amazon linux controller
 resource "aws_iam_role" "iam_for_ec2" {
-  name        = "Ec2RoleForSSM"
+  name        = "Role_For_SSM"
   description = "EC2 IAM role for SSM access"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
