@@ -1,10 +1,10 @@
 
 # ZONE OF DATA SOURCE
 
-# Declare the data source for AZ
-data "aws_availability_zones" "az" {
-  state = "available"
-}
+# # Declare the data source for AZ
+# data "aws_availability_zones" "az" {
+#   state = "available"
+# }
 # Declare the data source for the latest AMI Linux 
 data "aws_ami" "amazon_linux_2" {
   most_recent = true
