@@ -21,6 +21,10 @@ phases:
       - pip install --upgrade pip
       - pip install boto3 botocore
       - ansible-galaxy collection install amazon.aws community.general
+      #installing tflint for checking configuration error
+      - curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+      # Install AWS provider rules (if needed)
+      - tflint --init
 
   pre_build:
     commands:
@@ -32,6 +36,7 @@ phases:
       - terraform fmt
       - echo "Check for any syntax error..."
       - terraform validate
+      - tflint
 
   build:
     commands:
