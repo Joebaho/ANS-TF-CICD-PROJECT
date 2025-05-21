@@ -73,7 +73,7 @@ resource "aws_iam_role_policy_attachment" "ssm_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 resource "aws_iam_instance_profile" "ec2_instance_profile" {
-  name = "Ec2RoleForSSM"
+  name = "Role_For_SSM"
   role = aws_iam_role.iam_for_ec2.name
 }
 resource "aws_instance" "controller" {
