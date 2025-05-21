@@ -6,14 +6,13 @@
 #   state = "available"
 # }
 #IAM Role
-data "aws_iam_role" "iam_profile_role" {
-  name = "FullEC2S3SSMRole"
-  max_session_duration = 1
-  arn = "arn:aws:iam::546310954125:role/FullEC2S3SSMRole"
-}
+# data "aws_iam_role" "iam_profile_role" {
+#   name = "FullEC2S3SSMRole"
+#   max_session_duration = 1
+#   arn = "arn:aws:iam::546310954125:role/FullEC2S3SSMRole"
+# }
 data "aws_iam_instance_profile" "existing_profile" {
   name = "FullEC2S3SSMRole"
-  arn = "arn:aws:iam::546310954125:instance-profile/FullEC2S3SSMRole"
 }
 # Declare the data source for the latest AMI Linux 
 data "aws_ami" "amazon_linux_2" {
